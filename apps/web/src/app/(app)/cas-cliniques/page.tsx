@@ -5,6 +5,7 @@ import { prisma } from "@pub-montre/db";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { difficultyLabel } from "@/lib/labels";
+import { getCurrentUser } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Cas cliniques" };
 
@@ -22,7 +23,10 @@ export default function CasesPage() {
   );
 }
 
+const STATUS_TEXT = { NOT_STARTED: "Non commencé", IN_PROGRESS: "En cours", FINISHED: "Terminé" } as const;
+
 async function CaseList() {
+  const user = await getCurrentUser();
   const cases = await prisma.clinicalCase.findMany({
     where: { status: "VALIDATED", chapter: { status: "VALIDATED" } },
     orderBy: { createdAt: "asc" },
@@ -33,6 +37,12 @@ async function CaseList() {
       presentation: true,
       chapter: { select: { title: true } },
       _count: { select: { steps: true } },
+      attempts: {
+        where: { userId: user.id },
+        orderBy: { startedAt: "desc" },
+        take: 1,
+        select: { finishedAt: true },
+      },
     },
   });
 
@@ -53,7 +63,12 @@ async function CaseList() {
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {clinicalCase.chapter.title} · {difficultyLabel(clinicalCase.difficulty)} · {clinicalCase._count.steps} étapes
             </p>
-            <CardTitle className="mt-2">{clinicalCase.title}</CardTitle>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <CardTitle>{clinicalCase.title}</CardTitle>
+              <span className="text-xs font-medium text-muted-foreground">
+                {STATUS_TEXT[clinicalCase.attempts.length === 0 ? "NOT_STARTED" : clinicalCase.attempts[0]?.finishedAt ? "FINISHED" : "IN_PROGRESS"]}
+              </span>
+            </div>
             <CardDescription className="mt-2">{clinicalCase.presentation}</CardDescription>
           </Card>
         </Link>

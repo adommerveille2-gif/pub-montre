@@ -81,6 +81,11 @@ test("cas clinique : progression enregistrée, reprise après rechargement, fin 
   await page.reload();
   await expect(page.getByRole("heading", { name: "Cas terminé" })).toBeVisible();
 
+  // La liste des cas indique l'état de l'étudiant pour chaque cas.
+  await page.goto("/cas-cliniques");
+  await expect(page.getByText("Terminé", { exact: true }).first()).toBeVisible();
+  await page.getByRole("link", { name: /Dyspnée d'effort/ }).click();
+
   await page.getByRole("button", { name: "Recommencer le cas" }).click();
   await expect(page.getByText("Étape 1 sur 4")).toBeVisible();
 });
