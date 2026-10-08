@@ -502,6 +502,8 @@ model AnatomyModel {
   id            String        @id @default(cuid())
   conceptId     String?
   name          String
+  /// Texte pédagogique affiché quand l'étudiant sélectionne la structure.
+  description   String?
   /// Clé de la structure dans le modèle (ex. « heart.left_ventricle »).
   structureKey  String
   storageKey    String?
@@ -515,7 +517,7 @@ model AnatomyModel {
 
   concept Concept? @relation(fields: [conceptId], references: [id], onDelete: SetNull)
 
-  @@unique([structureKey, name])
+  @@unique([storageKey, structureKey])
 }
 
 // ---------------------------------------------------------------------------

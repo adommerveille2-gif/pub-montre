@@ -28,6 +28,12 @@ export default async function AdminHome() {
         <Stat label="Chapitres en brouillon" value={draftChapters} href="/admin/taxonomie" />
       </div>
       <p className="mt-2 text-sm text-muted-foreground">{validatedChapters} chapitres publiés.</p>
+      <nav aria-label="Raccourcis" className="mt-4 flex flex-wrap gap-3 text-sm">
+        <Link href="/admin/taxonomie" className="text-primary underline-offset-4 hover:underline">Taxonomie</Link>
+        <Link href="/admin/questions" className="text-primary underline-offset-4 hover:underline">Questions</Link>
+        <Link href="/admin/anatomie" className="text-primary underline-offset-4 hover:underline">Modèles 3D</Link>
+        <Link href="/admin/utilisateurs" className="text-primary underline-offset-4 hover:underline">Utilisateurs</Link>
+      </nav>
       <Card className="mt-6">
         <CardTitle>Activité récente</CardTitle>
         <ul className="mt-4 grid gap-2 text-sm">

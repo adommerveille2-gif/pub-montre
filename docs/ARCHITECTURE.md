@@ -66,6 +66,14 @@ Chaque réponse produit une `LearningEvent` par notion liée à la question. La 
 - **Règles de forme** : une QCM compte de 2 à 6 propositions, au moins une correcte, sans doublon (`validateQcm`).
 - **Garde-fou** : le rôle administrateur ne se donne qu'en base ou par un administrateur existant ; personne ne peut modifier son propre rôle.
 
+## Anatomie 3D (phase 4, en cours)
+
+- **Rendu** : three.js via React Three Fiber et drei. Rotation, zoom et déplacement, sélection d'une structure au clic, affichage ou estompage par structure. Mention de la source et de la licence.
+- **Publication** : un administrateur importe un fichier GLB (50 Mo maximum, en-tête vérifié) et déclare ses structures (nom de maille, nom affiché, description). Le fichier reste en brouillon. Seul un relecteur peut le publier.
+- **Accès** : le fichier 3D n'est servi qu'aux comptes connectés, et seulement s'il est publié. Il n'est jamais exposé directement.
+- **Sans modèle publié**, la page explique pourquoi. Aucune approximation n'est présentée comme une représentation exacte.
+- **Limite** : aucun modèle anatomique n'est fourni. Le test utilise un triangle de test, non anatomique. La qualité visuelle réelle d'un modèle licencié reste à vérifier.
+
 ## Sécurité
 
 - **Limitation de débit** : fenêtre fixe, stockée en base (`RateLimit`), mise à jour atomique (un seul `INSERT … ON CONFLICT`). Appliquée à : demandes de lien de connexion (5 par adresse et par 15 min), appels au tuteur (30 par heure et par étudiant), imports de cours (20 par heure et par étudiant).

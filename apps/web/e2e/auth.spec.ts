@@ -50,7 +50,7 @@ test("parcours complet : connexion, profil, tableau de bord, déconnexion", asyn
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test("les sections à venir n'ont aucune action factice", async ({ page }, testInfo) => {
+test("la page Anatomie 3D s'affiche sans section factice", async ({ page }, testInfo) => {
   const email = `section-${testInfo.project.name}-${Date.now()}@example.com`;
   await page.goto("/login");
   await page.getByLabel("Adresse e-mail").fill(email);
@@ -61,7 +61,9 @@ test("les sections à venir n'ont aucune action factice", async ({ page }, testI
 
   await page.goto("/anatomie-3d");
   await expect(page.getByRole("heading", { name: "Anatomie 3D" })).toBeVisible();
-  await expect(page.getByText("Bientôt disponible")).toBeVisible();
+  // Soit la visionneuse (modèles publiés), soit le message explicite : jamais une fausse fonctionnalité.
+  await expect(page.getByLabel("Visionneuse anatomique 3D").or(page.getByText("Aucun modèle publié pour l’instant"))).toBeVisible();
+  await expect(page.getByText("Bientôt disponible")).toHaveCount(0);
 });
 
 test("navigation adaptée à la taille d'écran et pas de débordement horizontal", async ({ page }, testInfo) => {

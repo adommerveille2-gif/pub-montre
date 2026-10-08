@@ -5,6 +5,7 @@ import { prisma } from "@pub-montre/db";
 import { validateQcm } from "@pub-montre/core";
 import { z } from "zod";
 import { authorize } from "@/server/admin/guard";
+import { AnatomyError, importAnatomyFile, parseStructureLines } from "@/server/anatomy/models";
 import { recordAudit } from "@/server/admin/audit";
 
 export type AdminState = { status: "idle" | "success" | "error"; message?: string };
@@ -192,4 +193,53 @@ export async function setRoleAction(_previous: AdminState, formData: FormData): 
   });
   revalidatePath("/admin/utilisateurs");
   return ok("Rôle mis à jour.");
+}
+
+export async function importAnatomyAction(_previous: AdminState, formData: FormData): Promise<AdminState> {
+  const user = await authorize("content:edit");
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return fail("Choisis un fichier GLB.");
+  const parsed = z.object({ license: text(200), sourceName: text(200), structures: text(10000) }).safeParse({
+    license: formData.get("license"),
+    sourceName: formData.get("sourceName"),
+    structures: formData.get("structures"),
+  });
+  if (!parsed.success) return fail(firstError(parsed.error));
+  try {
+    const storageKey = await importAnatomyFile({
+      bytes: new Uint8Array(await file.arrayBuffer()),
+      license: parsed.data.license,
+      sourceName: parsed.data.sourceName,
+      structures: parseStructureLines(parsed.data.structures),
+    });
+    await recordAudit({ actorId: user.id, action: "anatomy.import", entityType: "AnatomyModel", entityId: storageKey });
+  } catch (error) {
+    if (error instanceof AnatomyError) return fail(error.message);
+    throw error;
+  }
+  revalidatePath("/admin/anatomie");
+  return ok("Modèle importé en brouillon. Il ne sera visible qu'après validation.");
+}
+
+/** Publie ou retire toutes les structures d'un fichier 3D. Réservé au relecteur. */
+export async function setAnatomyFileStatusAction(_previous: AdminState, formData: FormData): Promise<AdminState> {
+  const user = await authorize("content:review");
+  const parsed = z.object({ storageKey: z.string().min(1).max(200), status: z.enum(["VALIDATED", "DRAFT"]) }).safeParse({
+    storageKey: formData.get("storageKey"),
+    status: formData.get("status"),
+  });
+  if (!parsed.success) return fail(firstError(parsed.error));
+  const result = await prisma.anatomyModel.updateMany({
+    where: { storageKey: parsed.data.storageKey },
+    data: { status: parsed.data.status, validatedAt: parsed.data.status === "VALIDATED" ? new Date() : null, validatedById: parsed.data.status === "VALIDATED" ? user.id : null },
+  });
+  await recordAudit({
+    actorId: user.id,
+    action: "anatomy.status",
+    entityType: "AnatomyModel",
+    entityId: parsed.data.storageKey,
+    metadata: { status: parsed.data.status, structures: result.count },
+  });
+  revalidatePath("/admin/anatomie");
+  return ok(parsed.data.status === "VALIDATED" ? "Modèle publié." : "Modèle retiré de la publication.");
 }
