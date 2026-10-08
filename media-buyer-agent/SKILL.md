@@ -1,6 +1,6 @@
 ---
 name: media-buyer-agent
-description: Media buyer senior, stratège créatif et analyste Meta Ads (Facebook et Instagram) pour la vente e-commerce en réponse directe. À utiliser dès que l'utilisateur parle de publicité Meta, Facebook Ads, Instagram Ads, ROAS, CPA, CPM, CTR, ATC, achats, funnel, angle publicitaire, hook, créatif, script UGC ou vidéo publicitaire, budget de campagne, test créatif, fatigue publicitaire, break-even, post-mortem de campagne, ou partage un export ou une capture d'Ads Manager. Couvre l'analyse produit, la compréhension client et motivation, la génération d'angles et de concepts, le diagnostic de données, les décisions de budget, les tests, et les marchés africains. Aussi pour « je fais quoi maintenant ? » ou « donne-moi de nouvelles idées de pub ». Déclenche aussi sur les équivalents anglais (Meta Ads, creative strategy, UGC script, media buying). Ne pas utiliser pour la création de sites, le SEO, la comptabilité générale, ni pour de la publicité hors Meta sauf comparaison explicite.
+description: Media buyer senior, stratège créatif et analyste Meta Ads (Facebook et Instagram) pour la vente e-commerce en réponse directe. À utiliser dès que l'utilisateur parle de publicité Meta, Facebook Ads, Instagram Ads, ROAS, CPA, CPM, CTR, ATC, achats, funnel, angle publicitaire, hook, créatif, budget de campagne, test créatif, fatigue publicitaire, break-even, post-mortem de campagne, ou partage un export ou une capture d'Ads Manager. Couvre l'analyse produit, la compréhension client et motivation, la génération d'angles et de concepts, le diagnostic de données, les décisions de budget, les tests, et les marchés africains. Aussi pour « je fais quoi maintenant ? » ou « donne-moi de nouvelles idées de pub ». Déclenche aussi sur les équivalents anglais (Meta Ads, creative strategy, UGC script, media buying). Ne pas utiliser pour la création de sites, le SEO, la comptabilité générale, la production vidéo (scénario, storyboard, prompts, génération : c'est le skill ai-video-production-studio), ni pour de la publicité hors Meta sauf comparaison explicite.
 ---
 
 # MEDIA BUYER AGENT
@@ -47,6 +47,8 @@ Identifier le mode, puis charger **uniquement** les références listées.
 | « Je fais quoi maintenant ? » | M8 DÉCISION RAPIDE | Uniquement ce qui est nécessaire à la décision |
 | Capture d'écran Ads Manager | M9 CAPTURE | META_AD_ANALYTICS |
 | Commentaires Facebook / Instagram | Intégré à M1 ou M4 | CUSTOMER_PSYCHOLOGY (section 7) |
+
+Hors périmètre : une demande de **production** vidéo (écrire un scénario de vidéo, storyboard, prompts, génération Higgsfield) n'est pas un mode de ce skill. Elle relève de `ai-video-production-studio`. Ne pas appliquer le workflow de qualification ni les règles M1 à une telle demande. Si la demande mêle stratégie Meta et production, traiter la stratégie ici et laisser la production au skill vidéo.
 
 Demandes mixtes : l'ordre est **données → diagnostic → créatif**. On ne propose jamais de nouvelles publicités avant d'avoir expliqué ce que les données disent, sauf si l'utilisateur n'a pas de données et demande explicitement une production.
 
