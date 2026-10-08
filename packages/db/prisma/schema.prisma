@@ -321,14 +321,16 @@ model CourseDocument {
 }
 
 model DocumentChunk {
-  id         String   @id @default(cuid())
+  id         String                       @id @default(cuid())
   documentId String
   /// Copié depuis le document pour filtrer la recherche sans jointure.
   ownerId    String?
   position   Int
   pageRef    Int?
-  content    String   @db.Text
-  createdAt  DateTime @default(now())
+  content    String                       @db.Text
+  /// Embedding (pgvector). Lu et écrit par SQL brut uniquement ; dimension = EMBEDDING_DIMENSIONS.
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime                     @default(now())
 
   document CourseDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 

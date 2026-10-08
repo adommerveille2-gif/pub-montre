@@ -45,7 +45,8 @@ Chaque réponse produit une `LearningEvent` par notion liée à la question. La 
 - **Fragments** : 350 mots avec 50 mots de recouvrement, numéro de page conservé.
 - **Recherche** : plein texte français (`to_tsvector('french')`), filtrée par propriétaire dans la requête SQL.
 - **Tuteur** : option « Répondre uniquement à partir de mon cours ». Les passages trouvés sont fournis au modèle, cités `[C1]`, et les citations sont enregistrées avec la réponse. Activé uniquement avec la clé API.
-- **Pas encore fait** : RAG vectoriel (embeddings, pgvector) et « Je réfléchis » (notation du raisonnement), qui demandent la clé API.
+- **RAG vectoriel** : embeddings OpenAI (`text-embedding-3-small`, 1536 dimensions) stockés dans pgvector (index HNSW cosinus). Recherche hybride : plein texte + vectorielle, fusionnées par Reciprocal Rank Fusion. Sans clé, seul le plein texte est utilisé. Un import réussi calcule les embeddings ; `pnpm --filter @pub-montre/web embed:backfill` complète les documents importés avant l'activation.
+- **Pas encore fait** : « Je réfléchis » (notation du raisonnement clinique par le modèle).
 - **Cas cliniques** : parcours étape par étape, indices à la demande, réponse attendue après réflexion. Rien n'est enregistré en base à ce stade.
 - **Révisions espacées** : bilan par échéance (aujourd'hui, demain, 3, 7, 14 jours) calculé dans le fuseau de l'étudiant.
 - **Plan de révision** : répartition du temps jusqu'à l'examen, proportionnelle à la priorité des notions et alternée chaque jour. Recalculable à tout moment.

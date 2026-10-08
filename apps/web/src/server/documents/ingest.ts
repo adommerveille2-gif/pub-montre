@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@pub-montre/db";
 import { chunkSections } from "@pub-montre/core";
 import { deleteStoredFile, newStorageKey, writeStoredFile } from "./storage";
+import { embedMissingChunks } from "./embed";
 import {
   ALLOWED_TYPES,
   ExtractionUnavailableError,
@@ -68,6 +69,9 @@ export async function importDocument(params: {
         data: { status: "PROCESSED", errorMessage: null },
       }),
     ]);
+    await embedMissingChunks({ documentId: document.id }).catch((error: unknown) => {
+      console.error("[documents] Embeddings non calculés, recherche plein texte seule", error);
+    });
     return { id: document.id, chunks: chunks.length };
   } catch (error) {
     const message =

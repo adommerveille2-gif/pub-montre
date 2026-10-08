@@ -92,3 +92,21 @@ test("une date d'examen passée est refusée", async ({ page }, testInfo) => {
   await page.getByRole("button", { name: "Créer le plan" }).click();
   await expect(page.getByRole("status")).toContainText("après aujourd’hui");
 });
+
+test("import : les passages sont vectorisés quand la clé d'embeddings est configurée", async ({ page }, testInfo) => {
+  await signIn(page, uniqueEmail("vecteurs", testInfo.project.name));
+  await page.goto("/cours/documents");
+  await page.getByLabel("Titre (facultatif)").fill("Cours vectoriel");
+  await page.locator("#file").setInputFiles(PDF);
+  await page.getByRole("button", { name: "Importer" }).click();
+  await expect(page.getByRole("status")).toContainText("passages indexés");
+
+  // Vérifie en base que les fragments ont bien un embedding (pgvector).
+  const { prisma } = await import("@pub-montre/db");
+  const [row] = await prisma.$queryRaw<{ vectorised: bigint }[]>`
+    SELECT count(*) AS vectorised FROM "DocumentChunk" c
+    JOIN "CourseDocument" d ON d."id" = c."documentId"
+    WHERE d."title" = 'Cours vectoriel' AND c."embedding" IS NOT NULL`;
+  expect(Number(row?.vectorised ?? 0)).toBeGreaterThan(0);
+  await prisma.$disconnect();
+});

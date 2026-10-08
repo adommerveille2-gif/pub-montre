@@ -8,3 +8,4 @@ export * from "./sampling.ts";
 export * from "./calendar.ts";
 export * from "./chunking.ts";
 export * from "./study-plan.ts";
+export * from "./fusion.ts";
