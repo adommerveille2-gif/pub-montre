@@ -5,6 +5,7 @@ import { prisma } from "@pub-montre/db";
 import { z } from "zod";
 import { askTutor, buildTutorSystemPrompt, isTutorConfigured, TutorNotConfiguredError } from "@/server/ai/tutor";
 import { getCurrentUser } from "@/lib/session";
+import { searchOwnPassages } from "@/server/documents/search";
 
 export type TutorFormState = { status: "idle" | "error"; message?: string };
 
@@ -49,16 +50,35 @@ export async function sendTutorMessageAction(_previous: TutorFormState, formData
       content: message.content,
     }));
 
+  const ownCourseOnly = formData.get("ownCourseOnly") === "on";
+  const passages = ownCourseOnly ? await searchOwnPassages(user.id, parsed.data.content, 5) : [];
+  const labelled = passages.map((passage, index) => ({
+    label: `C${index + 1}`,
+    documentTitle: passage.documentTitle,
+    pageRef: passage.pageRef,
+    content: passage.content,
+  }));
+
   const system = buildTutorSystemPrompt({
     firstName: user.profile?.firstName,
     yearName: user.profile?.academicYear?.name,
     goal: user.profile?.goal,
+    ownCourseOnly,
+    passages: labelled,
   });
 
   try {
     const reply = await askTutor({ userId: user.id, system, turns });
+    const citations = ownCourseOnly
+      ? labelled.map((passage, index) => ({ label: passage.label, documentTitle: passage.documentTitle, pageRef: passage.pageRef, passageIndex: index }))
+      : [];
     await prisma.message.create({
-      data: { conversationId: conversation.id, role: "ASSISTANT", content: reply || "Je n'ai pas de réponse à donner pour le moment." },
+      data: {
+        conversationId: conversation.id,
+        role: "ASSISTANT",
+        content: reply || "Je n'ai pas de réponse à donner pour le moment.",
+        citations,
+      },
     });
     await prisma.conversation.update({ where: { id: conversation.id }, data: { updatedAt: new Date() } });
   } catch (error) {

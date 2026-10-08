@@ -9,6 +9,7 @@ import { loadOwnedQuiz } from "@/server/learning/quiz";
 import { getCurrentUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { AnswerForm } from "./answer-form";
+import { difficultyLabel } from "@/lib/labels";
 
 export const metadata: Metadata = { title: "Entraînement en cours" };
 
@@ -136,17 +137,3 @@ async function QuizSection({ params, searchParams }: PageProps<"/entrainement/[q
   );
 }
 
-export function difficultyLabel(value: string): string {
-  switch (value) {
-    case "EASY":
-      return "Facile";
-    case "MEDIUM":
-      return "Intermédiaire";
-    case "HARD":
-      return "Difficile";
-    case "EXPERT":
-      return "Expert";
-    default:
-      return value;
-  }
-}

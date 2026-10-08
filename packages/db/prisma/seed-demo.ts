@@ -139,6 +139,69 @@ async function ensureChapter(subjectYearId: string, title: string, concepts: str
   return chapter;
 }
 
+const DEMO_CASE = {
+  title: "Dyspnée d'effort chez un patient de 58 ans (démonstration)",
+  presentation: "Patient de 58 ans consultant pour une dyspnée d'effort progressive.",
+  steps: [
+    {
+      stage: "Motif",
+      prompt: "Quelles questions poseriez-vous pour préciser le motif de consultation ?",
+      reveal: "Dyspnée d'effort progressive depuis 3 semaines, orthopnée (deux oreillers), prise de poids de 3 kg, œdèmes des chevilles.",
+      hints: ["Pensez à la chronologie, à l'effort déclenchant et aux signes de congestion."],
+      concept: "Physiopathologie de l'insuffisance cardiaque",
+    },
+    {
+      stage: "Hypothèses",
+      prompt: "Quelles hypothèses diagnostiques retenez-vous, et pourquoi ?",
+      reveal: "Insuffisance cardiaque gauche (orthopnée, œdèmes, prise de poids). Diagnostics différentiels : BPCO, anémie, embolie pulmonaire.",
+      hints: ["Les signes de congestion orientent vers le cœur, mais d'autres causes de dyspnée existent."],
+      concept: "Physiopathologie de l'insuffisance cardiaque",
+    },
+    {
+      stage: "Examens complémentaires",
+      prompt: "Quels examens demandez-vous en première intention ?",
+      reveal: "ECG, peptides natriurétiques (BNP ou NT-proBNP), radiographie thoracique, échocardiographie transthoracique, numération, ionogramme et créatinine.",
+      hints: ["Pensez aux examens qui confirment la cause cardiaque et à ceux qui évaluent le retentissement."],
+      concept: "ECG normal",
+    },
+    {
+      stage: "Diagnostic probable",
+      prompt: "Quel est le diagnostic le plus probable, et que précise l'échocardiographie ?",
+      reveal: "Insuffisance cardiaque. L'échocardiographie précise la fraction d'éjection, qui détermine le phénotype (FEVG réduite ou préservée).",
+      hints: ["Le phénotype dépend de la fraction d'éjection ventriculaire gauche."],
+      concept: "Physiopathologie de l'insuffisance cardiaque",
+    },
+  ],
+};
+
+async function ensureDemoCase(chapterId: string) {
+  const existing = await prisma.clinicalCase.findFirst({ where: { title: DEMO_CASE.title } });
+  if (existing) return;
+  const created = await prisma.clinicalCase.create({
+    data: {
+      chapterId,
+      title: DEMO_CASE.title,
+      difficulty: "MEDIUM",
+      presentation: DEMO_CASE.presentation,
+      status: "VALIDATED",
+    },
+  });
+  for (const [index, step] of DEMO_CASE.steps.entries()) {
+    const concept = await prisma.concept.findFirst({ where: { title: step.concept } });
+    await prisma.clinicalCaseStep.create({
+      data: {
+        caseId: created.id,
+        position: index + 1,
+        stage: step.stage,
+        prompt: step.prompt,
+        reveal: step.reveal,
+        hints: step.hints,
+        conceptId: concept?.id ?? null,
+      },
+    });
+  }
+}
+
 export async function seedDemoContent() {
   const source = await ensureSource();
 
@@ -187,5 +250,8 @@ export async function seedDemoContent() {
     }
   }
 
-  console.info(`Contenu de démonstration : ${SAMPLE_QUESTIONS.length} questions.`);
+  const cardioChapter = await prisma.chapter.findFirstOrThrow({ where: { title: "Insuffisance cardiaque" } });
+  await ensureDemoCase(cardioChapter.id);
+
+  console.info(`Contenu de démonstration : ${SAMPLE_QUESTIONS.length} questions, 1 cas clinique.`);
 }

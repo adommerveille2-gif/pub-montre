@@ -37,6 +37,19 @@ Chaque réponse produit une `LearningEvent` par notion liée à la question. La 
 - Sans `ANTHROPIC_API_KEY`, l'interface l'indique et désactive l'envoi. Aucune réponse n'est simulée.
 - Pas encore de RAG ni de citations de cours (phase 2).
 
+## Phase 2 : documents, RAG partiel, cas cliniques, plan
+
+- **Import** : PDF, DOCX, PPTX, PNG, JPEG, 15 Mo maximum. Le contenu doit correspondre au format annoncé (signature vérifiée). Extraction page par page (PDF) ou diapositive par diapositive (PPTX).
+- **Images** : enregistrées, mais le texte n'est pas extrait (OCR non disponible). Le motif est affiché à l'étudiant.
+- **Stockage** : fichiers privés, nom aléatoire, un dossier par étudiant, hors dossier public (`STORAGE_DIR`). Aucune URL de téléchargement n'est exposée.
+- **Fragments** : 350 mots avec 50 mots de recouvrement, numéro de page conservé.
+- **Recherche** : plein texte français (`to_tsvector('french')`), filtrée par propriétaire dans la requête SQL.
+- **Tuteur** : option « Répondre uniquement à partir de mon cours ». Les passages trouvés sont fournis au modèle, cités `[C1]`, et les citations sont enregistrées avec la réponse. Activé uniquement avec la clé API.
+- **Pas encore fait** : RAG vectoriel (embeddings, pgvector) et « Je réfléchis » (notation du raisonnement), qui demandent la clé API.
+- **Cas cliniques** : parcours étape par étape, indices à la demande, réponse attendue après réflexion. Rien n'est enregistré en base à ce stade.
+- **Révisions espacées** : bilan par échéance (aujourd'hui, demain, 3, 7, 14 jours) calculé dans le fuseau de l'étudiant.
+- **Plan de révision** : répartition du temps jusqu'à l'examen, proportionnelle à la priorité des notions et alternée chaque jour. Recalculable à tout moment.
+
 ## Contenu de démonstration
 
 `packages/db/prisma/seed-demo.ts` ajoute 5 QCM et 2 cours marqués comme démonstration. Ils doivent être remplacés par du contenu rédigé et validé par des enseignants avant tout usage réel.

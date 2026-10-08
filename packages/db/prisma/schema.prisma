@@ -301,16 +301,18 @@ model Course {
 
 /// Cours importés par un étudiant (ownerId renseigné) ou fournis par l'administration (ownerId null).
 model CourseDocument {
-  id         String         @id @default(cuid())
-  ownerId    String?
-  title      String
-  filename   String
-  mimeType   String
-  sizeBytes  Int
-  storageKey String         @unique
-  status     DocumentStatus @default(PENDING)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id           String         @id @default(cuid())
+  ownerId      String?
+  title        String
+  filename     String
+  mimeType     String
+  sizeBytes    Int
+  storageKey   String         @unique
+  status       DocumentStatus @default(PENDING)
+  /// Motif lisible quand l'extraction échoue ou n'est pas disponible (ex. images sans OCR).
+  errorMessage String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   owner  User?           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   chunks DocumentChunk[]

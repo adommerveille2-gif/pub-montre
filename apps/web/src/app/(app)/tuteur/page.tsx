@@ -32,7 +32,7 @@ async function Chat() {
       messages: {
         orderBy: { createdAt: "asc" },
         take: 100,
-        select: { id: true, role: true, content: true },
+        select: { id: true, role: true, content: true, citations: true },
       },
     },
   });
@@ -66,6 +66,16 @@ async function Chat() {
                 )}
               >
                 {message.content}
+                {Array.isArray(message.citations) && message.citations.length > 0 ? (
+                  <ul className="mt-2 grid gap-1 border-t border-border pt-2 text-xs text-muted-foreground">
+                    {(message.citations as { label: string; documentTitle: string; pageRef: number | null }[]).map((citation) => (
+                      <li key={citation.label}>
+                        [{citation.label}] {citation.documentTitle}
+                        {citation.pageRef ? `, p. ${citation.pageRef}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
             ))
           )}

@@ -28,6 +28,10 @@ export function ChatForm({ disabled }: { disabled: boolean }) {
         placeholder="Pose ta question, par exemple : « Explique-moi le nerf vague. »"
         className="w-full resize-y rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       />
+      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <input type="checkbox" name="ownCourseOnly" className="size-4 accent-[var(--primary)]" disabled={disabled || pending} />
+        Répondre uniquement à partir de mon cours
+      </label>
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={disabled || pending}>
           {pending ? "Le tuteur réfléchit…" : "Envoyer"}

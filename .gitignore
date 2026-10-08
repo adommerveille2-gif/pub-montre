@@ -25,3 +25,6 @@ packages/db/src/generated/
 
 # Playwright & Next (apps/web)
 .e2e/
+
+# Fichiers importés en local (stockage de développement)
+.data/

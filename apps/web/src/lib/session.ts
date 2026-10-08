@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { prisma } from "@pub-montre/db";
 import { auth } from "./auth";
 
@@ -9,6 +10,8 @@ import { auth } from "./auth";
  * Doit être appelé dans un <Suspense> (Cache Components).
  */
 export async function getCurrentUser() {
+  // Données propres à chaque requête : jamais pré-rendues dans le shell statique.
+  await connection();
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) {

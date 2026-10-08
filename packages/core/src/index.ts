@@ -6,3 +6,5 @@ export * from "./scheduling.ts";
 export * from "./plan.ts";
 export * from "./sampling.ts";
 export * from "./calendar.ts";
+export * from "./chunking.ts";
+export * from "./study-plan.ts";

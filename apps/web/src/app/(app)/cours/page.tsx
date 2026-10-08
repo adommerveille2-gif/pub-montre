@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { loadTaxonomy } from "@/server/learning/queries";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Mes cours" };
 
@@ -33,6 +34,11 @@ async function CourseList() {
 
   return (
     <div className="grid gap-8">
+      <div>
+        <Link href="/cours/documents" className={buttonVariants({ variant: "secondary", size: "md" })}>
+          Importer et rechercher mes propres cours
+        </Link>
+      </div>
       {withContent.map((year) => (
         <section key={year.id} aria-labelledby={`year-${year.id}`} className="grid gap-4">
           <h2 id={`year-${year.id}`} className="text-lg font-semibold text-foreground">{year.name}</h2>

@@ -15,7 +15,15 @@ export function isTutorConfigured(): boolean {
 const DEFAULT_MODEL = "claude-sonnet-5-5";
 
 /** Consignes pédagogiques : enseigner, vérifier la compréhension, ne jamais diagnostiquer. */
-export function buildTutorSystemPrompt(context: { firstName?: string | null; yearName?: string | null; goal?: string | null }): string {
+export type CoursePassage = { label: string; documentTitle: string; pageRef: number | null; content: string };
+
+export function buildTutorSystemPrompt(context: {
+  firstName?: string | null;
+  yearName?: string | null;
+  goal?: string | null;
+  ownCourseOnly?: boolean;
+  passages?: CoursePassage[];
+}): string {
   const who = context.firstName ? `L'étudiant s'appelle ${context.firstName}.` : "L'étudiant n'a pas indiqué son prénom.";
   const year = context.yearName ? `Il est en ${context.yearName} de médecine.` : "Son année d'études n'est pas renseignée.";
   return [
@@ -31,7 +39,27 @@ export function buildTutorSystemPrompt(context: { firstName?: string | null; yea
     "- Si tu n'es pas certain d'une information, dis-le explicitement : « Je ne dispose pas de suffisamment d'informations fiables pour répondre avec certitude. »",
     "- Ne cite pas de référence bibliographique inventée. Si tu cites une recommandation, indique son nom exact et son année.",
     "- Réponds en français.",
+    ...(context.ownCourseOnly ? courseOnlyRules(context.passages ?? []) : []),
   ].join("\n");
+}
+
+function courseOnlyRules(passages: CoursePassage[]): string[] {
+  if (passages.length === 0) {
+    return [
+      "",
+      "Mode « mon cours uniquement » : aucun passage pertinent n'a été trouvé dans les cours de l'étudiant.",
+      "Dis-le clairement : « Je ne trouve pas cette information dans ton cours. » Ne réponds pas à partir d'autres sources.",
+    ];
+  }
+  return [
+    "",
+    "Mode « mon cours uniquement » : réponds uniquement à partir des passages ci-dessous.",
+    "Cite le passage utilisé entre crochets, par exemple [C2]. Si les passages ne suffisent pas, dis-le.",
+    ...passages.map((passage) => {
+      const page = passage.pageRef ? `, p. ${passage.pageRef}` : "";
+      return `[${passage.label}] ${passage.documentTitle}${page} :\n${passage.content}`;
+    }),
+  ];
 }
 
 type Turn = { role: "user" | "assistant"; content: string };
