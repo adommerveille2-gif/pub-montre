@@ -74,6 +74,10 @@ Chaque réponse produit une `LearningEvent` par notion liée à la question. La 
 - **Sans modèle publié**, la page explique pourquoi. Aucune approximation n'est présentée comme une représentation exacte.
 - **Limite** : aucun modèle anatomique n'est fourni. Le test utilise un triangle de test, non anatomique. La qualité visuelle réelle d'un modèle licencié reste à vérifier.
 
+## Mise en production
+
+Voir [DEPLOYMENT.md](DEPLOYMENT.md) : services, variables, ordre de mise en place. La configuration de production est vérifiée au démarrage ; le contenu de démonstration n'est jamais chargé en production.
+
 ## Sécurité
 
 - **Limitation de débit** : fenêtre fixe, stockée en base (`RateLimit`), mise à jour atomique (un seul `INSERT … ON CONFLICT`). Appliquée à : demandes de lien de connexion (5 par adresse et par 15 min), appels au tuteur (30 par heure et par étudiant), imports de cours (20 par heure et par étudiant).

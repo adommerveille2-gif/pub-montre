@@ -59,7 +59,9 @@ async function main() {
     });
   }
 
-  await seedDemoContent();
+  // Contenu de démonstration : jamais en production, sauf SEED_DEMO=true explicitement.
+  const demo = process.env.SEED_DEMO ? process.env.SEED_DEMO === "true" : process.env.NODE_ENV !== "production";
+  if (demo) await seedDemoContent();
   console.info(`Seed terminé : ${YEARS.length} années, ${SUBJECTS.length} matières.`);
 }
 
