@@ -64,7 +64,8 @@ Modèles d'image cités par l'outil `generate_image` (à vérifier avec `models_
 ## 4. Règles de génération
 
 ### Coût
-1. Appeler avec `get_cost: true` avant toute génération.
+1. Appeler avec `get_cost: true` avant toute génération. Ne jamais annoncer un coût de mémoire : le préflight est la seule source.
+   Repère mesuré le 8 octobre 2026 : `seedance_2_0_mini`, 5 s, 720p, sans audio, 9:16 = 5 crédits. `grok_video_v15_lite`, 5 s, 480p = 5 crédits. Un plan de 5 s coûte donc souvent plus qu'il n'y paraît.
 2. Présenter le total à l'utilisateur : nombre de plans × variantes × coût unitaire.
 3. Attendre confirmation explicite avant de lancer, sauf budget accordé nommément.
 
@@ -87,7 +88,8 @@ Modèles d'image cités par l'outil `generate_image` (à vérifier avec `models_
 - Si l'appel expire sans réponse claire, l'issue de la soumission est inconnue. Ne pas resoumettre. Réutiliser les `job_id` déjà reçus, et ne relancer qu'après avoir connu l'issue.
 
 ### Attente et résultat
-1. `jobs_wait` avec `timeout_seconds` ≤ 15, en répétant selon `poll_after_seconds` tant que `all_terminal` est faux.
+1. `jobs_wait` avec `timeout_seconds` ≤ 15, en répétant selon `poll_after_seconds` tant que `all_terminal` est faux. Repère mesuré : un clip de 5 s a pris environ 4 à 5 minutes (une dizaine d'appels `jobs_wait`). Prévenir l'utilisateur que l'attente est longue.
+   Pendant l'attente, le type du job peut apparaître comme `image` : le type définitif est `video` une fois terminé. Ne pas en conclure une erreur.
 2. Une fois tous les jobs terminés, un seul `show_generation_by_ids` pour l'affichage.
 3. Un résultat n'est annoncé comme réussi que s'il a une URL ou un statut terminal réussi.
 
