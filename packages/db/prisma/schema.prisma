@@ -1,0 +1,712 @@
+// Schéma Prisma — Tuteur médical personnel (phase 0).
+// Les tables d'embeddings (pgvector) seront ajoutées en phase 2, avec le RAG.
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  CONTENT_REVIEWER
+  ADMIN
+}
+
+/// Cycle de validation de tout contenu pédagogique (humain dans la boucle).
+enum ContentStatus {
+  DRAFT
+  VALIDATED
+  REJECTED
+}
+
+enum StudyGoal {
+  PREPARE_EXAMS
+  MASTER_COURSES
+  CLINICAL_REASONING
+  COMPETITIVE_EXAM
+}
+
+enum QuestionType {
+  QCM
+  QROC
+  OPEN
+  TRUE_FALSE
+  MATCHING
+  CLINICAL
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+}
+
+enum FlashcardKind {
+  DEFINITION
+  FUNCTION
+  MECHANISM
+  SYMPTOMS
+  DIFFERENTIAL
+}
+
+enum QuizMode {
+  TRAINING
+  EXAM
+}
+
+enum QuizStatus {
+  IN_PROGRESS
+  FINISHED
+}
+
+/// Source d'une preuve d'apprentissage, qui alimente le moteur de maîtrise.
+enum LearningSource {
+  QCM
+  QROC
+  OPEN
+  FLASHCARD
+  CASE
+  EXAM
+  CHAT
+}
+
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ConversationMode {
+  GENERAL
+  OWN_COURSE_ONLY
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum RecommendationKind {
+  EXPLAIN
+  FLASHCARDS
+  QUIZ_EASY
+  QUIZ_MEDIUM
+  CASE
+  REVIEW_LATER
+}
+
+enum SourceType {
+  GUIDELINE
+  SOCIETY
+  BOOK
+  ARTICLE
+  COURSE
+}
+
+// ---------------------------------------------------------------------------
+// Authentification (contrat Auth.js + @auth/prisma-adapter)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  role          Role      @default(STUDENT)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  profile         StudentProfile?
+  quizzes         Quiz[]
+  quizAttempts    QuizAttempt[]
+  learningEvents  LearningEvent[]
+  masteryStates   MasteryState[]
+  reviewItems     ReviewItem[]
+  conversations   Conversation[]
+  courseDocuments CourseDocument[]
+  studyPlans      StudyPlan[]
+  recommendations LearningRecommendation[]
+  achievements    UserAchievement[]
+  llmUsages       LlmUsage[]
+  auditLogs       AuditLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model StudentProfile {
+  id             String     @id @default(cuid())
+  userId         String     @unique
+  firstName      String?
+  university     String?
+  academicYearId String?
+  goal           StudyGoal?
+  dailyMinutes   Int        @default(30)
+  onboardedAt    DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+}
+
+// ---------------------------------------------------------------------------
+// Taxonomie pédagogique : Année → Matière → Chapitre → Concept
+// Entièrement administrable (rien n'est codé en dur).
+// ---------------------------------------------------------------------------
+
+model AcademicYear {
+  id          String   @id @default(cuid())
+  order       Int      @unique
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subjectYears SubjectYear[]
+  profiles     StudentProfile[]
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subjectYears SubjectYear[]
+}
+
+/// Une matière peut appartenir à plusieurs années (ex. pharmacologie en 2e et 3e année).
+model SubjectYear {
+  id             String @id @default(cuid())
+  academicYearId String
+  subjectId      String
+  position       Int    @default(0)
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  subject      Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  chapters     Chapter[]
+
+  @@unique([academicYearId, subjectId])
+}
+
+model Chapter {
+  id            String        @id @default(cuid())
+  subjectYearId String
+  title         String
+  position      Int           @default(0)
+  status        ContentStatus @default(DRAFT)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  subjectYear SubjectYear    @relation(fields: [subjectYearId], references: [id], onDelete: Cascade)
+  concepts    Concept[]
+  courses     Course[]
+  questions   Question[]
+  cases       ClinicalCase[]
+}
+
+/// Unité de mesure de la maîtrise : « physiopathologie de l'insuffisance cardiaque ».
+model Concept {
+  id          String        @id @default(cuid())
+  chapterId   String
+  title       String
+  description String?
+  /// Poids dans l'agrégation chapitre / matière, défini par l'administration.
+  weight      Float         @default(1)
+  position    Int           @default(0)
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  chapter         Chapter                  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  questionLinks   QuestionConcept[]
+  flashcards      Flashcard[]
+  learningEvents  LearningEvent[]
+  masteryStates   MasteryState[]
+  reviewItems     ReviewItem[]
+  recommendations LearningRecommendation[]
+  caseSteps       ClinicalCaseStep[]
+  anatomyModels   AnatomyModel[]
+}
+
+// ---------------------------------------------------------------------------
+// Contenus pédagogiques
+// ---------------------------------------------------------------------------
+
+model Course {
+  id        String        @id @default(cuid())
+  chapterId String
+  title     String
+  content   String        @db.Text
+  status    ContentStatus @default(DRAFT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+}
+
+/// Cours importés par un étudiant (ownerId renseigné) ou fournis par l'administration (ownerId null).
+model CourseDocument {
+  id         String         @id @default(cuid())
+  ownerId    String?
+  title      String
+  filename   String
+  mimeType   String
+  sizeBytes  Int
+  storageKey String         @unique
+  status     DocumentStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  owner  User?           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  chunks DocumentChunk[]
+
+  @@index([ownerId])
+}
+
+model DocumentChunk {
+  id         String   @id @default(cuid())
+  documentId String
+  /// Copié depuis le document pour filtrer la recherche sans jointure.
+  ownerId    String?
+  position   Int
+  pageRef    Int?
+  content    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  document CourseDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, position])
+  @@index([ownerId])
+}
+
+model Question {
+  id              String        @id @default(cuid())
+  chapterId       String
+  type            QuestionType
+  difficulty      Difficulty
+  statement       String        @db.Text
+  explanation     String        @db.Text
+  justification   String?       @db.Text
+  pitfall         String?       @db.Text
+  memoryTip       String?       @db.Text
+  /// Réponse pour QROC / ouvertes ; pour les QCM, voir QuestionOption.isCorrect.
+  referenceAnswer String?       @db.Text
+  sourceId        String?
+  status          ContentStatus @default(DRAFT)
+  createdById     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  chapter      Chapter           @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  source       MedicalSource?    @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  options      QuestionOption[]
+  concepts     QuestionConcept[]
+  quizItems    QuizItem[]
+  quizAttempts QuizAttempt[]
+
+  @@index([chapterId, difficulty])
+}
+
+model QuestionOption {
+  id         String  @id @default(cuid())
+  questionId String
+  position   Int
+  text       String  @db.Text
+  isCorrect  Boolean @default(false)
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, position])
+}
+
+model QuestionConcept {
+  questionId String
+  conceptId  String
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  concept  Concept  @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, conceptId])
+}
+
+model Flashcard {
+  id        String        @id @default(cuid())
+  conceptId String
+  kind      FlashcardKind
+  front     String        @db.Text
+  back      String        @db.Text
+  status    ContentStatus @default(DRAFT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  concept Concept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+}
+
+model ClinicalCase {
+  id           String        @id @default(cuid())
+  chapterId    String
+  title        String
+  difficulty   Difficulty
+  presentation String        @db.Text
+  status       ContentStatus @default(DRAFT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  chapter Chapter            @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  steps   ClinicalCaseStep[]
+}
+
+model ClinicalCaseStep {
+  id        String  @id @default(cuid())
+  caseId    String
+  conceptId String?
+  position  Int
+  /// Ex. « motif », « interrogatoire », « diagnostic probable ».
+  stage     String
+  prompt    String  @db.Text
+  /// Contenu révélé à l'étudiant après sa réponse.
+  reveal    String? @db.Text
+  hints     Json    @default("[]")
+
+  case    ClinicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  concept Concept?     @relation(fields: [conceptId], references: [id], onDelete: SetNull)
+
+  @@unique([caseId, position])
+}
+
+model MedicalSource {
+  id        String     @id @default(cuid())
+  title     String
+  authors   String?
+  publisher String?
+  year      Int?
+  url       String?
+  type      SourceType
+  validated Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  questions Question[]
+}
+
+model AnatomyModel {
+  id            String        @id @default(cuid())
+  conceptId     String?
+  name          String
+  /// Clé de la structure dans le modèle (ex. « heart.left_ventricle »).
+  structureKey  String
+  storageKey    String?
+  license       String
+  sourceName    String
+  status        ContentStatus @default(DRAFT)
+  validatedAt   DateTime?
+  validatedById String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  concept Concept? @relation(fields: [conceptId], references: [id], onDelete: SetNull)
+
+  @@unique([structureKey, name])
+}
+
+// ---------------------------------------------------------------------------
+// Entraînement et évaluation
+// ---------------------------------------------------------------------------
+
+model Quiz {
+  id               String     @id @default(cuid())
+  userId           String
+  mode             QuizMode   @default(TRAINING)
+  status           QuizStatus @default(IN_PROGRESS)
+  title            String?
+  timeLimitSeconds Int?
+  startedAt        DateTime   @default(now())
+  finishedAt       DateTime?
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items    QuizItem[]
+  attempts QuizAttempt[]
+
+  @@index([userId, status])
+}
+
+model QuizItem {
+  id         String  @id @default(cuid())
+  quizId     String
+  questionId String
+  position   Int
+  flagged    Boolean @default(false)
+
+  quiz     Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, position])
+}
+
+model QuizAttempt {
+  id             String   @id @default(cuid())
+  quizId         String
+  userId         String
+  questionId     String
+  /// Réponse brute : identifiants d'options (QCM) ou texte libre (QROC).
+  answer         Json
+  score          Float
+  responseTimeMs Int?
+  hintsUsed      Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  quiz     Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Moteur d'apprentissage : preuves, maîtrise, révision espacée, recommandations
+// ---------------------------------------------------------------------------
+
+/// Preuve normalisée, produite par toutes les activités. Source de vérité du moteur.
+model LearningEvent {
+  id             String         @id @default(cuid())
+  userId         String
+  conceptId      String
+  source         LearningSource
+  /// Score entre 0 et 1, rubrique incluse pour les réponses ouvertes.
+  score          Float
+  difficulty     Difficulty?
+  responseTimeMs Int?
+  hintsUsed      Int            @default(0)
+  occurredAt     DateTime       @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concept Concept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  @@index([userId, conceptId, occurredAt])
+}
+
+model MasteryState {
+  id            String   @id @default(cuid())
+  userId        String
+  conceptId     String
+  /// Estimation de maîtrise entre 0 et 1.
+  mastery       Float    @default(0)
+  /// Confiance dans l'estimation entre 0 et 1, croît avec le nombre de preuves.
+  confidence    Float    @default(0)
+  evidenceCount Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concept Concept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conceptId])
+}
+
+/// État de révision espacée par notion. Paramètres FSRS.
+model ReviewItem {
+  id           String    @id @default(cuid())
+  userId       String
+  conceptId    String
+  /// Niveau affiché : 1 à découvrir, 2 fragile, 3 en progression, 4 maîtrisé, 5 très bien maîtrisé.
+  level        Int       @default(1)
+  stability    Float?
+  difficulty   Float?
+  reps         Int       @default(0)
+  lapses       Int       @default(0)
+  state        Int       @default(0)
+  dueAt        DateTime
+  lastReviewAt DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concept Concept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conceptId])
+  @@index([userId, dueAt])
+}
+
+model LearningRecommendation {
+  id          String             @id @default(cuid())
+  userId      String
+  conceptId   String?
+  kind        RecommendationKind
+  reason      String             @db.Text
+  priority    Float              @default(0)
+  createdAt   DateTime           @default(now())
+  completedAt DateTime?
+  dismissedAt DateTime?
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concept Concept? @relation(fields: [conceptId], references: [id], onDelete: SetNull)
+
+  @@index([userId, completedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Tuteur IA
+// ---------------------------------------------------------------------------
+
+model Conversation {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String?
+  mode      ConversationMode @default(GENERAL)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId, updatedAt])
+}
+
+model Message {
+  id             String          @id @default(cuid())
+  conversationId String
+  role           ChatMessageRole
+  content        String          @db.Text
+  /// Passages de cours ou sources citées.
+  citations      Json            @default("[]")
+  createdAt      DateTime        @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model LlmUsage {
+  id           String   @id @default(cuid())
+  userId       String?
+  provider     String
+  model        String
+  task         String
+  inputTokens  Int
+  outputTokens Int
+  costUsd      Float?
+  createdAt    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Planification, gamification, administration
+// ---------------------------------------------------------------------------
+
+model StudyPlan {
+  id           String     @id @default(cuid())
+  userId       String
+  title        String
+  examDate     DateTime?
+  dailyMinutes Int        @default(30)
+  goal         StudyGoal?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions StudySession[]
+}
+
+model StudySession {
+  id              String    @id @default(cuid())
+  planId          String
+  scheduledFor    DateTime
+  durationMinutes Int
+  conceptId       String?
+  activity        String
+  completedAt     DateTime?
+
+  plan StudyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, scheduledFor])
+}
+
+model Achievement {
+  id          String @id @default(cuid())
+  code        String @unique
+  title       String
+  description String
+  xp          Int    @default(0)
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+}

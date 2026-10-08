@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/* Thème : tokens sémantiques. Clair par défaut, sombre via la classe `.dark` (next-themes). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f5f9f9;
+  --foreground: #0e1d20;
+  --card: #ffffff;
+  --card-foreground: #0e1d20;
+  --muted: #e9f1f2;
+  --muted-foreground: #54696e;
+  --border: #d4e2e4;
+  --primary: #0f766e;
+  --primary-hover: #0c5f58;
+  --primary-foreground: #ffffff;
+  --ring: #14b8a6;
+  --success: #067647;
+  --danger: #b42318;
+}
+
+.dark {
+  --background: #0a1517;
+  --foreground: #e4eff0;
+  --card: #102023;
+  --card-foreground: #e4eff0;
+  --muted: #162a2d;
+  --muted-foreground: #9ab2b6;
+  --border: #22393d;
+  --primary: #2dd4bf;
+  --primary-hover: #5eead4;
+  --primary-foreground: #042f2b;
+  --ring: #5eead4;
+  --success: #4ade80;
+  --danger: #f87171;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}

@@ -1,0 +1,22 @@
+{
+  "name": "pub-montre",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Tuteur médical personnel pour étudiants en médecine (1re à 6e année)",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @pub-montre/web dev",
+    "build": "pnpm --filter @pub-montre/web build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @pub-montre/web test:e2e",
+    "db:generate": "pnpm --filter @pub-montre/db generate",
+    "db:migrate": "pnpm --filter @pub-montre/db migrate:dev",
+    "db:migrate:deploy": "pnpm --filter @pub-montre/db migrate:deploy",
+    "db:studio": "pnpm --filter @pub-montre/db studio"
+  }
+}
