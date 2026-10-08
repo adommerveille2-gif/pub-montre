@@ -97,3 +97,17 @@ test("le thème sombre peut être activé et appliqué", async ({ page }, testIn
   await page.getByRole("button", { name: "Passer en mode clair" }).click();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 });
+
+test("trop de demandes de connexion pour une même adresse sont refusées", async ({ page }, testInfo) => {
+  const email = `limite-${testInfo.project.name}-${Date.now()}@example.com`;
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    await page.goto("/login");
+    await page.getByLabel("Adresse e-mail").fill(email);
+    await page.getByRole("button", { name: "Recevoir mon lien de connexion" }).click();
+    if (attempt < 6) {
+      await expect(page).toHaveURL(/\/login\/verifier$/);
+    } else {
+      await expect(page.locator("#login-error")).toContainText("Trop de demandes");
+    }
+  }
+});

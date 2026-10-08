@@ -66,6 +66,12 @@ Chaque réponse produit une `LearningEvent` par notion liée à la question. La 
 - **Règles de forme** : une QCM compte de 2 à 6 propositions, au moins une correcte, sans doublon (`validateQcm`).
 - **Garde-fou** : le rôle administrateur ne se donne qu'en base ou par un administrateur existant ; personne ne peut modifier son propre rôle.
 
+## Sécurité
+
+- **Limitation de débit** : fenêtre fixe, stockée en base (`RateLimit`), mise à jour atomique (un seul `INSERT … ON CONFLICT`). Appliquée à : demandes de lien de connexion (5 par adresse et par 15 min), appels au tuteur (30 par heure et par étudiant), imports de cours (20 par heure et par étudiant).
+- **Autorisation** : identité toujours lue depuis la session serveur ; droits par rôle dans `core` ; journal d'audit des actions d'administration.
+- **Limite connue** : la limitation n'est pas encore appliquée par adresse IP, et la fenêtre fixe permet une rafale en bord de fenêtre. Acceptable pour cette phase, à renforcer avant une mise en production.
+
 ## Contenu de démonstration
 
 `packages/db/prisma/seed-demo.ts` ajoute 5 QCM et 2 cours marqués comme démonstration. Ils doivent être remplacés par du contenu rédigé et validé par des enseignants avant tout usage réel.

@@ -13,3 +13,4 @@ export * from "./gamification.ts";
 export * from "./voice.ts";
 export * from "./permissions.ts";
 export * from "./qcm.ts";
+export * from "./rate-limit.ts";

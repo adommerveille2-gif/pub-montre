@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/session";
+import { consumeRate, LIMITS } from "@/server/security/rate-limit";
 import { deleteOwnedDocument, importDocument, ImportError } from "@/server/documents/ingest";
 
 export type DocumentFormState = { status: "idle" | "success" | "error"; message?: string };
@@ -16,6 +17,11 @@ export async function importDocumentAction(_previous: DocumentFormState, formDat
   if (!(file instanceof File) || file.size === 0) {
     return { status: "error", message: "Choisis un fichier à importer." };
   }
+  const rate = await consumeRate(`import:${user.id}`, LIMITS.importPerUser.limit, LIMITS.importPerUser.windowMs);
+  if (!rate.allowed) {
+    return { status: "error", message: `Trop d'imports récents. Réessaie dans ${Math.ceil(rate.retryAfterSeconds / 60)} min.` };
+  }
+
   const titleParsed = titleSchema.safeParse(String(formData.get("title") ?? ""));
   if (!titleParsed.success) {
     return { status: "error", message: titleParsed.error.issues[0]?.message ?? "Titre invalide." };

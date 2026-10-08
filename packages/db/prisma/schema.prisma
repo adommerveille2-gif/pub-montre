@@ -733,3 +733,10 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([actorId, createdAt])
 }
+
+/// Compteur de limitation de débit (fenêtre fixe), mis à jour de façon atomique.
+model RateLimit {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+}

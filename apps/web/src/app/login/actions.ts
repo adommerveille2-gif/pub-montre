@@ -3,6 +3,7 @@
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { signIn } from "@/lib/auth";
+import { consumeRate, LIMITS } from "@/server/security/rate-limit";
 
 export type LoginFormState = {
   status: "idle" | "error";
@@ -24,6 +25,11 @@ export async function requestMagicLinkAction(
   const parsed = emailSchema.safeParse({ email: String(formData.get("email") ?? "").trim().toLowerCase() });
   if (!parsed.success) {
     return { status: "error", message: parsed.error.issues[0]?.message ?? "Adresse invalide." };
+  }
+
+  const rate = await consumeRate(`login:${parsed.data.email}`, LIMITS.loginPerEmail.limit, LIMITS.loginPerEmail.windowMs);
+  if (!rate.allowed) {
+    return { status: "error", message: `Trop de demandes pour cette adresse. Réessaie dans ${Math.ceil(rate.retryAfterSeconds / 60)} min.` };
   }
 
   try {

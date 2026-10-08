@@ -5,6 +5,7 @@ import { prisma } from "@pub-montre/db";
 import { z } from "zod";
 import { askTutor, buildTutorSystemPrompt, isTutorConfigured, TutorNotConfiguredError } from "@/server/ai/tutor";
 import { getCurrentUser } from "@/lib/session";
+import { consumeRate, LIMITS } from "@/server/security/rate-limit";
 import { searchOwnPassages } from "@/server/documents/search";
 
 export type TutorFormState = { status: "idle" | "error"; message?: string };
@@ -17,6 +18,11 @@ const messageSchema = z.object({
 
 export async function sendTutorMessageAction(_previous: TutorFormState, formData: FormData): Promise<TutorFormState> {
   const user = await getCurrentUser();
+
+  const rate = await consumeRate(`tutor:${user.id}`, LIMITS.tutorPerUser.limit, LIMITS.tutorPerUser.windowMs);
+  if (!rate.allowed) {
+    return { status: "error", message: `Limite atteinte. Réessaie dans ${Math.ceil(rate.retryAfterSeconds / 60)} min.` };
+  }
 
   if (!isTutorConfigured()) {
     return { status: "error", message: "Le tuteur IA n'est pas encore connecté." };
