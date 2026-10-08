@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   // Paquet monorepo écrit en TypeScript source.
-  transpilePackages: ["@pub-montre/db"],
+  transpilePackages: ["@pub-montre/db", "@pub-montre/core"],
   serverExternalPackages: ["pg", "nodemailer"],
   turbopack: {
     rules: {

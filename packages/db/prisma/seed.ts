@@ -2,6 +2,7 @@
 // Ce ne sont que des données de base, modifiables ensuite depuis l'administration.
 // `prisma db seed` est idempotent (upsert).
 import { prisma } from "../src/client.ts";
+import { seedDemoContent } from "./seed-demo.ts";
 
 const YEARS = [1, 2, 3, 4, 5, 6] as const;
 
@@ -58,6 +59,7 @@ async function main() {
     });
   }
 
+  await seedDemoContent();
   console.info(`Seed terminé : ${YEARS.length} années, ${SUBJECTS.length} matières.`);
 }
 

@@ -1,25 +1,5 @@
-import { readFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
-import { expect, test, type Page } from "@playwright/test";
-
-const LOG_FILE = resolve(process.cwd(), ".e2e/server.log");
-
-/** Lit le dernier lien de connexion écrit par le serveur (mode sans SMTP). */
-async function readMagicLink(page: Page, email: string): Promise<string> {
-  for (let attempt = 0; attempt < 50; attempt++) {
-    if (existsSync(LOG_FILE)) {
-      const log = readFileSync(LOG_FILE, "utf8");
-      const marker = `Lien de connexion pour ${email}`;
-      const index = log.lastIndexOf(marker);
-      if (index !== -1) {
-        const match = log.slice(index).match(/https?:\/\/\S+/);
-        if (match) return match[0];
-      }
-    }
-    await page.waitForTimeout(200);
-  }
-  throw new Error(`Aucun lien de connexion trouvé pour ${email}`);
-}
+import { expect, test } from "@playwright/test";
+import { readMagicLink } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -79,8 +59,8 @@ test("les sections à venir n'ont aucune action factice", async ({ page }, testI
   await page.goto(await readMagicLink(page, email));
   await expect(page).toHaveURL(/\/dashboard$/);
 
-  await page.goto("/tuteur");
-  await expect(page.getByRole("heading", { name: "Mon tuteur" })).toBeVisible();
+  await page.goto("/anatomie-3d");
+  await expect(page.getByRole("heading", { name: "Anatomie 3D" })).toBeVisible();
   await expect(page.getByText("Bientôt disponible")).toBeVisible();
 });
 

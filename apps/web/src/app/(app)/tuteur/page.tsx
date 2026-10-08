@@ -1,8 +1,83 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/coming-soon";
+import { Suspense } from "react";
+import { prisma } from "@pub-montre/db";
+import { PageHeader } from "@/components/page-header";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { getCurrentUser } from "@/lib/session";
+import { isTutorConfigured } from "@/server/ai/tutor";
+import { ChatForm } from "./chat-form";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Mon tuteur" };
 
-export default function Page() {
-  return <ComingSoon title="Mon tuteur" description="Pose tes questions, à l'écrit ou à l'oral." phase={1} />;
+export default function TutorPage() {
+  return (
+    <>
+      <PageHeader title="Mon tuteur" description="Pose tes questions. Il explique, puis vérifie que tu as compris." />
+      <Suspense fallback={null}>
+        <Chat />
+      </Suspense>
+    </>
+  );
+}
+
+async function Chat() {
+  const user = await getCurrentUser();
+  const configured = isTutorConfigured();
+
+  const conversation = await prisma.conversation.findFirst({
+    where: { userId: user.id },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      messages: {
+        orderBy: { createdAt: "asc" },
+        take: 100,
+        select: { id: true, role: true, content: true },
+      },
+    },
+  });
+  const messages = conversation?.messages ?? [];
+
+  return (
+    <div className="grid gap-6">
+      {!configured ? (
+        <Card>
+          <CardTitle>Le tuteur IA n’est pas encore connecté</CardTitle>
+          <CardDescription className="mt-2">
+            Pour activer les réponses, l’administrateur doit renseigner la variable <code className="text-foreground">ANTHROPIC_API_KEY</code> sur le serveur.
+            Les autres sections restent utilisables.
+          </CardDescription>
+        </Card>
+      ) : null}
+
+      <Card className="grid gap-4 p-0">
+        <div className="flex min-h-72 flex-col gap-3 overflow-y-auto p-5" aria-live="polite">
+          {messages.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun message pour l’instant. Commence par une question sur ton cours.</p>
+          ) : (
+            messages.map((message) => (
+              <div
+                key={message.id}
+                className={cn(
+                  "max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-relaxed",
+                  message.role === "USER"
+                    ? "ml-auto bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground",
+                )}
+              >
+                {message.content}
+              </div>
+            ))
+          )}
+        </div>
+        <div className="border-t border-border p-5">
+          <ChatForm disabled={!configured} />
+        </div>
+      </Card>
+
+      <p className="text-xs text-muted-foreground">
+        Outil éducatif. Il ne remplace pas un avis médical et ne sert pas au diagnostic ni au traitement de patients.
+      </p>
+    </div>
+  );
 }
