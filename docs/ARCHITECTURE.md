@@ -82,7 +82,8 @@ Voir [DEPLOYMENT.md](DEPLOYMENT.md) : services, variables, ordre de mise en plac
 
 - **Limitation de débit** : fenêtre fixe, stockée en base (`RateLimit`), mise à jour atomique (un seul `INSERT … ON CONFLICT`). Appliquée à : demandes de lien de connexion (5 par adresse et par 15 min), appels au tuteur (30 par heure et par étudiant), imports de cours (20 par heure et par étudiant).
 - **Autorisation** : identité toujours lue depuis la session serveur ; droits par rôle dans `core` ; journal d'audit des actions d'administration.
-- **Limite connue** : la limitation n'est pas encore appliquée par adresse IP, et la fenêtre fixe permet une rafale en bord de fenêtre. Acceptable pour cette phase, à renforcer avant une mise en production.
+- **Par adresse IP** : les demandes de connexion sont aussi limitées par origine réseau (20 par 15 min). L'adresse vient de `x-forwarded-for` (première valeur) ou `x-real-ip`, fournies par l'hébergeur ; sans adresse fiable, aucune limite IP n'est appliquée plutôt que de bloquer tout le monde.
+- **Limite connue** : la fenêtre fixe permet une rafale en bord de fenêtre. Acceptable pour cette phase.
 
 ## Contenu de démonstration
 

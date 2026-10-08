@@ -28,4 +28,6 @@ export const LIMITS = {
   loginPerEmail: { limit: 5, windowMs: 15 * 60 * 1000 },
   tutorPerUser: { limit: 30, windowMs: 60 * 60 * 1000 },
   importPerUser: { limit: 20, windowMs: 60 * 60 * 1000 },
+  // Configurable : une suite de tests qui se connecte beaucoup depuis une même adresse peut relever ce plafond.
+  loginPerIp: { limit: Number(process.env.RATE_LIMIT_LOGIN_IP ?? 20), windowMs: 15 * 60 * 1000 },
 } as const;

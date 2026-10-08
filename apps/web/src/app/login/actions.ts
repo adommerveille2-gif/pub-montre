@@ -3,7 +3,9 @@
 import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 import { signIn } from "@/lib/auth";
+import { headers } from "next/headers";
 import { consumeRate, LIMITS } from "@/server/security/rate-limit";
+import { clientIpFromHeaders } from "@/server/security/client-ip";
 
 export type LoginFormState = {
   status: "idle" | "error";
@@ -30,6 +32,15 @@ export async function requestMagicLinkAction(
   const rate = await consumeRate(`login:${parsed.data.email}`, LIMITS.loginPerEmail.limit, LIMITS.loginPerEmail.windowMs);
   if (!rate.allowed) {
     return { status: "error", message: `Trop de demandes pour cette adresse. Réessaie dans ${Math.ceil(rate.retryAfterSeconds / 60)} min.` };
+  }
+
+  // Plafond par origine réseau : un même appareil ne peut pas essayer de nombreuses adresses.
+  const ip = clientIpFromHeaders(await headers());
+  if (ip) {
+    const byIp = await consumeRate(`login-ip:${ip}`, LIMITS.loginPerIp.limit, LIMITS.loginPerIp.windowMs);
+    if (!byIp.allowed) {
+      return { status: "error", message: `Trop de demandes depuis cet appareil. Réessaie dans ${Math.ceil(byIp.retryAfterSeconds / 60)} min.` };
+    }
   }
 
   try {

@@ -44,6 +44,7 @@ export default defineConfig({
         AUTH_SECRET: "e2e-only-secret-0123456789abcdef",
         AUTH_URL: BASE_URL,
         EMAIL_DRIVER: "console",
+        RATE_LIMIT_LOGIN_IP: "1000",
         OPENAI_API_KEY: "e2e-only-fake-key",
         OPENAI_BASE_URL: `http://localhost:${EMBEDDINGS_PORT}/v1`,
       },

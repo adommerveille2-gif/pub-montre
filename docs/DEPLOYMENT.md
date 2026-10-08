@@ -63,7 +63,7 @@ Au démarrage, le serveur signale dans ses journaux toute variable obligatoire m
 
 - **Contenu validé** : remplacer les QCM, cas et cartes de démonstration par du contenu relu par des enseignants.
 - **Modèles 3D** : seuls des modèles licenciés et relus peuvent être publiés.
-- **Limitation de débit par adresse IP** : elle n'existe pas encore (elle se fait par compte ou par e-mail).
+- **Limitation par adresse IP** : active. Vérifiez que l'hébergeur transmet bien l'adresse du client dans `x-forwarded-for` (sinon la limite IP ne s'applique pas).
 - **Sauvegardes** de la base et du bucket, avec un test de restauration.
 - **Relecture juridique** (dispositif médical, RGPD, droit d'auteur sur les cours importés) et mentions légales.
 - **Surveillance** : un contrôle externe sur `/api/health` et la consultation régulière des journaux.
