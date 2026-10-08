@@ -47,7 +47,7 @@ Chaque réponse produit une `LearningEvent` par notion liée à la question. La 
 - **Tuteur** : option « Répondre uniquement à partir de mon cours ». Les passages trouvés sont fournis au modèle, cités `[C1]`, et les citations sont enregistrées avec la réponse. Activé uniquement avec la clé API.
 - **RAG vectoriel** : embeddings OpenAI (`text-embedding-3-small`, 1536 dimensions) stockés dans pgvector (index HNSW cosinus). Recherche hybride : plein texte + vectorielle, fusionnées par Reciprocal Rank Fusion. Sans clé, seul le plein texte est utilisé. Un import réussi calcule les embeddings ; `pnpm --filter @pub-montre/web embed:backfill` complète les documents importés avant l'activation.
 - **Pas encore fait** : « Je réfléchis » (notation du raisonnement clinique par le modèle).
-- **Cas cliniques** : parcours étape par étape, indices à la demande, réponse attendue après réflexion. Rien n'est enregistré en base à ce stade.
+- **Cas cliniques** : parcours étape par étape, indices à la demande, réponse attendue après réflexion, progression persistée. La progression est enregistrée : tentatives (`CaseAttempt`), étapes révélées et indices demandés (`CaseAttemptStep`). L'étudiant reprend exactement où il s'était arrêté, et peut recommencer le cas.
 - **Révisions espacées** : bilan par échéance (aujourd'hui, demain, 3, 7, 14 jours) calculé dans le fuseau de l'étudiant.
 - **Plan de révision** : répartition du temps jusqu'à l'examen, proportionnelle à la priorité des notions et alternée chaque jour. Recalculable à tout moment.
 

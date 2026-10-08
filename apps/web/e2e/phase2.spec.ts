@@ -51,21 +51,38 @@ test("un fichier dont le contenu ne correspond pas à son format est refusé", a
   await expect(page.getByRole("status")).toContainText("ne correspond pas à son format");
 });
 
-test("cas clinique : réflexion, indice, réponse attendue, fin du cas", async ({ page }, testInfo) => {
+test("cas clinique : progression enregistrée, reprise après rechargement, fin et recommencement", async ({ page }, testInfo) => {
   await signIn(page, uniqueEmail("cas", testInfo.project.name));
   await page.goto("/cas-cliniques");
   await page.getByRole("link", { name: /Dyspnée d'effort/ }).click();
-  await expect(page.getByText(/Étape 1 sur 4/)).toBeVisible();
+  await expect(page.getByText("Étape 1 sur 4")).toBeVisible();
 
   await page.getByRole("button", { name: "Donne-moi un indice" }).click();
   await expect(page.getByText(/Indice :/)).toBeVisible();
 
-  for (let step = 1; step <= 4; step++) {
+  // L'indice demandé est enregistré : il reste affiché après rechargement.
+  await page.reload();
+  await expect(page.getByText(/Indice :/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Voir la réponse attendue" }).click();
+  await expect(page.getByText("Étape 2 sur 4")).toBeVisible();
+
+  // La reprise retrouve l'étape 2, et la réponse de l'étape 1 reste visible.
+  await page.reload();
+  await expect(page.getByText("Étape 2 sur 4")).toBeVisible();
+  await expect(page.getByText("Réponse attendue", { exact: true }).first()).toBeVisible();
+
+  for (let step = 2; step <= 4; step++) {
     await page.getByRole("button", { name: "Voir la réponse attendue" }).click();
-    await expect(page.getByText("Réponse attendue", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: step === 4 ? "Terminer le cas" : "Étape suivante" }).click();
+    if (step < 4) await expect(page.getByText(`Étape ${step + 1} sur 4`)).toBeVisible();
   }
   await expect(page.getByRole("heading", { name: "Cas terminé" })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Cas terminé" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Recommencer le cas" }).click();
+  await expect(page.getByText("Étape 1 sur 4")).toBeVisible();
 });
 
 test("plan de révision : création, sessions, case cochée", async ({ page }, testInfo) => {
