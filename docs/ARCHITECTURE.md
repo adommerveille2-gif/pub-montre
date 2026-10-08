@@ -58,6 +58,14 @@ Chaque réponse produit une `LearningEvent` par notion liée à la question. La 
 - **Voix** : reconnaissance et lecture dans le navigateur (Web Speech API), machine d'états IDLE → LISTENING → THINKING → SPEAKING, interruption pendant la lecture. Non disponible sur les navigateurs sans cette API (Firefox pour la reconnaissance). La logique est testée ; le rendu audio réel n'a pas pu être vérifié dans cet environnement.
 - **Analyse d'images** : reportée. Elle demande un modèle de vision et une clé API, et doit rester éducative.
 
+## Administration (phase 4, en cours)
+
+- **Rôles et droits** : une seule table (`packages/core/src/permissions.ts`). `STUDENT` n'a aucun droit ; `CONTENT_REVIEWER` relit les contenus ; `ADMIN` gère la taxonomie, les contenus et les rôles.
+- **Application** : chaque action serveur vérifie le droit, valide ses entrées, puis écrit dans le journal d'audit (`AuditLog`). Les pages masquent les formulaires que l'utilisateur ne peut pas utiliser.
+- **Cycle de validation** : une question créée est en brouillon. Elle n'est visible des étudiants qu'après validation par un relecteur. Un chapitre n'est visible qu'une fois publié.
+- **Règles de forme** : une QCM compte de 2 à 6 propositions, au moins une correcte, sans doublon (`validateQcm`).
+- **Garde-fou** : le rôle administrateur ne se donne qu'en base ou par un administrateur existant ; personne ne peut modifier son propre rôle.
+
 ## Contenu de démonstration
 
 `packages/db/prisma/seed-demo.ts` ajoute 5 QCM et 2 cours marqués comme démonstration. Ils doivent être remplacés par du contenu rédigé et validé par des enseignants avant tout usage réel.

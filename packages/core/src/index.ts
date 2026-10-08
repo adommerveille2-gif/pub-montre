@@ -11,3 +11,5 @@ export * from "./study-plan.ts";
 export * from "./fusion.ts";
 export * from "./gamification.ts";
 export * from "./voice.ts";
+export * from "./permissions.ts";
+export * from "./qcm.ts";

@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
 import { NAV_ITEMS } from "@/lib/navigation";
 import { NAV_ICONS } from "./nav-icons";
 import { NavLinks } from "./nav-links";
+import Link from "next/link";
 
 /** Barre basse mobile : 4 sections principales, les autres dans « Plus » (sans JavaScript). */
-export function MobileNav() {
+export function MobileNav({ staff = false }: { staff?: boolean }) {
   const primary = NAV_ITEMS.filter((item) => item.primary);
   const secondary = NAV_ITEMS.filter((item) => !item.primary);
 
@@ -37,6 +37,11 @@ export function MobileNav() {
             </summary>
             <div className="absolute bottom-full right-2 mb-2 w-64 rounded-2xl border border-border bg-card p-2 shadow-lg">
               <NavLinks items={secondary} />
+              {staff ? (
+                <Link href="/admin" className="mt-1 block rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+                  Administration
+                </Link>
+              ) : null}
             </div>
           </details>
         </li>
