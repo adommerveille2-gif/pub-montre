@@ -1,5 +1,5 @@
 import { expect, test, type Browser } from "@playwright/test";
-import { readMagicLink, signIn } from "./helpers";
+import { signIn } from "./helpers";
 
 const uniqueEmail = (label: string, project: string) => `${label}-${project}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
 

@@ -16,7 +16,7 @@ export function ChatForm({ disabled }: { disabled: boolean }) {
   }, [state, pending]);
 
   return (
-    <form action={formAction} className="grid gap-3" noValidate>
+    <form id="tutor-form" action={formAction} className="grid gap-3" noValidate>
       <label htmlFor="content" className="sr-only">Ta question</label>
       <textarea
         ref={textarea}

@@ -9,3 +9,5 @@ export * from "./calendar.ts";
 export * from "./chunking.ts";
 export * from "./study-plan.ts";
 export * from "./fusion.ts";
+export * from "./gamification.ts";
+export * from "./voice.ts";

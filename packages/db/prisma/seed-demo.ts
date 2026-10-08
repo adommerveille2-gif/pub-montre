@@ -202,6 +202,24 @@ async function ensureDemoCase(chapterId: string) {
   }
 }
 
+const DEMO_FLASHCARDS: { concept: string; kind: "DEFINITION" | "FUNCTION" | "MECHANISM"; front: string; back: string }[] = [
+  { concept: "Débit cardiaque", kind: "FUNCTION", front: "Quelle est la formule du débit cardiaque ?", back: "DC = fréquence cardiaque × volume d'éjection systolique." },
+  { concept: "Potentiel d'action cardiaque", kind: "MECHANISM", front: "Qu'est-ce qui produit le plateau du potentiel d'action ventriculaire ?", back: "L'entrée de calcium par les canaux calciques de type L, compensée par la sortie de potassium." },
+  { concept: "Hypertension artérielle", kind: "DEFINITION", front: "Seuil de l'hypertension artérielle au cabinet (ESH 2023) ?", back: "PAS ≥ 140 mmHg et/ou PAD ≥ 90 mmHg." },
+];
+
+async function ensureDemoFlashcards() {
+  for (const card of DEMO_FLASHCARDS) {
+    const concept = await prisma.concept.findFirst({ where: { title: card.concept } });
+    if (!concept) continue;
+    const existing = await prisma.flashcard.findFirst({ where: { front: card.front } });
+    if (existing) continue;
+    await prisma.flashcard.create({
+      data: { conceptId: concept.id, kind: card.kind, front: card.front, back: card.back, status: "VALIDATED" },
+    });
+  }
+}
+
 export async function seedDemoContent() {
   const source = await ensureSource();
 
@@ -252,6 +270,7 @@ export async function seedDemoContent() {
 
   const cardioChapter = await prisma.chapter.findFirstOrThrow({ where: { title: "Insuffisance cardiaque" } });
   await ensureDemoCase(cardioChapter.id);
+  await ensureDemoFlashcards();
 
   console.info(`Contenu de démonstration : ${SAMPLE_QUESTIONS.length} questions, 1 cas clinique.`);
 }

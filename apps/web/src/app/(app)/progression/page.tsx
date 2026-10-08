@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { currentStreak, dayKey } from "@pub-montre/core";
+import { BADGES, computeXp, currentStreak, dayKey, levelFromEstimate, levelFromXp, startOfDayIn, unlockedBadges } from "@pub-montre/core";
 import { prisma } from "@pub-montre/db";
 import { PageHeader } from "@/components/page-header";
 import { MasteryBar } from "@/components/mastery-bar";
@@ -40,10 +40,17 @@ async function ProgressSection() {
     loadConceptRows(user.id),
   ]);
 
-  const [totalAnswers, totalCorrect] = await Promise.all([
+  const [totalAnswers, totalCorrect, flashcardReviews, todayEvents] = await Promise.all([
     prisma.quizAttempt.count({ where: { userId: user.id } }),
     prisma.quizAttempt.count({ where: { userId: user.id, score: 1 } }),
+    prisma.learningEvent.count({ where: { userId: user.id, source: "FLASHCARD" } }),
+    prisma.learningEvent.findMany({ where: { userId: user.id, occurredAt: { gte: startOfDayIn(now, TIME_ZONE) } }, select: { responseTimeMs: true } }),
   ]);
+  const xp = computeXp({ answers: totalAnswers, correctAnswers: totalCorrect, flashcardReviews });
+  const levelInfo = levelFromXp(xp);
+  const conceptsMastered = rows.filter((row) => levelFromEstimate(row) === 5).length;
+  const todayMinutes = Math.round(todayEvents.reduce((sum, event) => sum + (event.responseTimeMs ?? 0), 0) / 60000);
+  const goal = user.profile?.dailyMinutes ?? 30;
   const totalTimeMs = events.reduce((sum, event) => sum + (event.responseTimeMs ?? 0), 0);
   const accuracy = totalAnswers === 0 ? null : totalCorrect / totalAnswers;
   const streak = currentStreak(
@@ -51,6 +58,8 @@ async function ProgressSection() {
     now,
     TIME_ZONE,
   );
+  const badges = unlockedBadges({ answers: totalAnswers, correctAnswers: totalCorrect, flashcardReviews, streakDays: streak, conceptsMastered });
+  const unlockedCodes = new Set(badges.map((badge) => badge.code));
 
   // Taux de réussite par jour sur 14 jours, dans le fuseau de l'étudiant.
   const DAY_MS = 24 * 60 * 60 * 1000;
@@ -71,6 +80,34 @@ async function ProgressSection() {
 
   return (
     <div className="grid gap-6">
+      <Card className="grid gap-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-sm text-muted-foreground">Niveau de progression</p>
+            <p className="text-3xl font-semibold tabular-nums text-foreground">Niveau {levelInfo.level}</p>
+          </div>
+          <p className="text-sm tabular-nums text-muted-foreground">{xp} XP · {levelInfo.nextLevelXp - levelInfo.currentXp} XP avant le niveau {levelInfo.level + 1}</p>
+        </div>
+        <MasteryBar value={levelInfo.currentXp / Math.max(1, levelInfo.nextLevelXp)} label="Progression vers le niveau suivant" />
+        <div>
+          <p className="text-sm text-muted-foreground">Objectif du jour : {Math.min(todayMinutes, goal)} / {goal} min</p>
+          <MasteryBar value={todayMinutes / Math.max(1, goal)} label="Objectif quotidien" className="mt-2" />
+        </div>
+      </Card>
+
+      <Card>
+        <CardTitle>Badges</CardTitle>
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+          {BADGES.map((badge) => (
+            <li key={badge.code} className={unlockedCodes.has(badge.code) ? "rounded-xl border border-primary/30 bg-primary/5 p-4" : "rounded-xl border border-border p-4 opacity-60"}>
+              <p className="font-medium text-foreground">{badge.title}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{badge.description}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{unlockedCodes.has(badge.code) ? "Débloqué" : "À débloquer"}</p>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
       <div className="grid gap-4 sm:grid-cols-4">
         <Stat label="Questions" value={String(totalAnswers)} />
         <Stat label="Taux de réussite" value={percent(accuracy)} />

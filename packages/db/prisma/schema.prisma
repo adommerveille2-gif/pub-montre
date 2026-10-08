@@ -130,21 +130,22 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts        Account[]
-  sessions        Session[]
-  profile         StudentProfile?
-  quizzes         Quiz[]
-  quizAttempts    QuizAttempt[]
-  learningEvents  LearningEvent[]
-  masteryStates   MasteryState[]
-  reviewItems     ReviewItem[]
-  conversations   Conversation[]
-  courseDocuments CourseDocument[]
-  studyPlans      StudyPlan[]
-  recommendations LearningRecommendation[]
-  achievements    UserAchievement[]
-  llmUsages       LlmUsage[]
-  auditLogs       AuditLog[]
+  accounts         Account[]
+  sessions         Session[]
+  profile          StudentProfile?
+  quizzes          Quiz[]
+  quizAttempts     QuizAttempt[]
+  learningEvents   LearningEvent[]
+  masteryStates    MasteryState[]
+  reviewItems      ReviewItem[]
+  conversations    Conversation[]
+  courseDocuments  CourseDocument[]
+  studyPlans       StudyPlan[]
+  recommendations  LearningRecommendation[]
+  achievements     UserAchievement[]
+  llmUsages        LlmUsage[]
+  auditLogs        AuditLog[]
+  flashcardReviews FlashcardReview[]
 }
 
 model Account {
@@ -388,6 +389,23 @@ model QuestionConcept {
   @@id([questionId, conceptId])
 }
 
+/// Planification des cartes mémoire, par étudiant.
+model FlashcardReview {
+  userId       String
+  flashcardId  String
+  level        Int       @default(1)
+  reps         Int       @default(0)
+  lapses       Int       @default(0)
+  dueAt        DateTime
+  lastReviewAt DateTime?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@id([userId, flashcardId])
+  @@index([userId, dueAt])
+}
+
 model Flashcard {
   id        String        @id @default(cuid())
   conceptId String
@@ -398,7 +416,8 @@ model Flashcard {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  concept Concept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  concept Concept           @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  reviews FlashcardReview[]
 }
 
 model ClinicalCase {

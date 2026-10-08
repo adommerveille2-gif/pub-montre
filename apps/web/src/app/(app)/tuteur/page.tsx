@@ -6,6 +6,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/session";
 import { isTutorConfigured } from "@/server/ai/tutor";
 import { ChatForm } from "./chat-form";
+import { VoiceControl } from "@/components/voice/voice-control";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Mon tuteur" };
@@ -37,6 +38,7 @@ async function Chat() {
     },
   });
   const messages = conversation?.messages ?? [];
+  const lastReply = [...messages].reverse().find((message) => message.role === "ASSISTANT") ?? null;
 
   return (
     <div className="grid gap-6">
@@ -80,7 +82,8 @@ async function Chat() {
             ))
           )}
         </div>
-        <div className="border-t border-border p-5">
+        <div className="grid gap-4 border-t border-border p-5">
+          {configured ? <VoiceControl formId="tutor-form" replyId={lastReply?.id ?? null} replyText={lastReply?.content ?? null} /> : null}
           <ChatForm disabled={!configured} />
         </div>
       </Card>

@@ -14,6 +14,11 @@ export default function TrainingPage({ searchParams }: PageProps<"/entrainement"
   return (
     <>
       <PageHeader title="Entraînement" description="QCM validés, corrigés pas à pas." />
+      <p className="-mt-2 mb-6 text-sm">
+        <Link href="/entrainement/cartes" className="text-primary underline-offset-4 hover:underline">
+          Réviser mes cartes mémoire →
+        </Link>
+      </p>
       <Suspense fallback={null}>
         <TrainingSetup searchParams={searchParams} />
       </Suspense>

@@ -51,6 +51,13 @@ Chaque réponse produit une `LearningEvent` par notion liée à la question. La 
 - **Révisions espacées** : bilan par échéance (aujourd'hui, demain, 3, 7, 14 jours) calculé dans le fuseau de l'étudiant.
 - **Plan de révision** : répartition du temps jusqu'à l'examen, proportionnelle à la priorité des notions et alternée chaque jour. Recalculable à tout moment.
 
+## Phase 3 (en cours)
+
+- **Cartes mémoire** : planification par carte (`FlashcardReview`), notes « À revoir », « Bien », « Facile ». Chaque carte revue compte comme une preuve pour sa notion. La file est figée pendant la session.
+- **Gamification** : XP (10 par bonne réponse, 3 par erreur, 5 par carte), niveaux de progression (le niveau L commence à 50 × (L − 1)² XP), badges dérivés de l'activité réelle, objectif quotidien basé sur le temps de travail. Aucun XP sans activité mesurée.
+- **Voix** : reconnaissance et lecture dans le navigateur (Web Speech API), machine d'états IDLE → LISTENING → THINKING → SPEAKING, interruption pendant la lecture. Non disponible sur les navigateurs sans cette API (Firefox pour la reconnaissance). La logique est testée ; le rendu audio réel n'a pas pu être vérifié dans cet environnement.
+- **Analyse d'images** : reportée. Elle demande un modèle de vision et une clé API, et doit rester éducative.
+
 ## Contenu de démonstration
 
 `packages/db/prisma/seed-demo.ts` ajoute 5 QCM et 2 cours marqués comme démonstration. Ils doivent être remplacés par du contenu rédigé et validé par des enseignants avant tout usage réel.
@@ -87,5 +94,5 @@ Les matières et années ne sont pas codées en dur : `prisma/seed.ts` fournit u
 | 0. Fondations : monorepo, CI, schéma, auth, design system, layout responsive, thème | Livrée |
 | 1. MVP : dashboard, taxonomie, cours, QCM, correction, progression, niveau réel, tuteur | Livrée : moteur v1, QCM et correction, progression, niveau réel, tuteur (activé par `ANTHROPIC_API_KEY`) |
 | 2. Import PDF, RAG, cas cliniques, raisonnement clinique, révision espacée, plan | À faire |
-| 3. Voix, analyse d'images, flashcards avancées, gamification | À faire |
+| 3. Voix, analyse d'images, flashcards avancées, gamification | En cours : cartes mémoire, gamification et voix livrées ; analyse d'images reportée (modèle de vision requis) |
 | 4. Anatomie 3D, administration avancée | À faire |

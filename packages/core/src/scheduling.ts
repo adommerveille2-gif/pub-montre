@@ -14,3 +14,21 @@ export function nextReviewInDays(level: number, lastScore: number): number {
 export function addDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }
+
+export type FlashcardRating = "again" | "good" | "easy";
+
+export type FlashcardState = { level: number; reps: number; lapses: number };
+
+/**
+ * Passe une carte à son état suivant selon la note de l'étudiant.
+ * « À revoir » ramène au niveau 1 ; « Bien » et « Facile » montent d'un niveau (« Facile » d'un de plus).
+ */
+export function nextFlashcardState(state: FlashcardState, rating: FlashcardRating): FlashcardState & { dueInDays: number } {
+  const reps = state.reps + 1;
+  if (rating === "again") {
+    return { level: 1, reps, lapses: state.lapses + 1, dueInDays: 1 };
+  }
+  const step = rating === "easy" ? 2 : 1;
+  const level = Math.min(5, Math.max(1, state.level) + step);
+  return { level, reps, lapses: state.lapses, dueInDays: nextReviewInDays(level, 1) };
+}
